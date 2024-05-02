@@ -9,6 +9,9 @@ import java.io.File;
 import java.io.IOException;
 import javax.swing.text.Document;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class ClientGUI extends JFrame {
     private final JTextField hostField = new JTextField("localhost", 20);
     private final JTextField portField = new JTextField("12345", 5);
@@ -65,13 +68,30 @@ public class ClientGUI extends JFrame {
 
         listFilesButton.addActionListener(e -> {
             try {
-                fileClient.listFiles();
-                String serverResponse = fileClient.receiveMessage();
-                logArea.append(serverResponse +  " \n");
+                fileClient.listFiles();  // Envia el comando para listar los archivos
+                String serverResponse = fileClient.receiveMessage();  // Recibe el JSON como string
+
+                // Limpiar el área de texto antes de agregar nuevo contenido
+                logArea.setText("");
+
+                // Parsear el JSON y formatear la salida
+                ObjectMapper mapper = new ObjectMapper();
+                JsonNode filesArray = mapper.readTree(serverResponse);
+                int i = 1;
+                if (filesArray.isArray()) {
+                    for (JsonNode fileNode : filesArray) {
+                        String fileName = fileNode.path("name").asText();
+                        String fileSize = fileNode.path("size").asText();
+                        String fileExtension = fileNode.path("extension").asText();
+                        logArea.append( i + " <----  Nombre: " + fileName + ",  ----  Tamaño: " + fileSize + "  ------ bytes, Extension: " + fileExtension + "\n");
+                        i++;
+                    }
+                }
             } catch (IOException ioException) {
                 logArea.append("Error listing files: " + ioException.getMessage() + "\n");
             }
         });
+
 
        sendFileButton.addActionListener(e -> {
             int returnVal = fileChooser.showOpenDialog(ClientGUI.this);

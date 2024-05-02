@@ -53,7 +53,6 @@ public class ClientHandler implements Runnable {
         try {
             String line;
             while (true) {
-                // Espera recibir un mensaje del cliente
                 line = input.readUTF();
                 System.out.println(line);
                 if (line != null) {
@@ -61,12 +60,14 @@ public class ClientHandler implements Runnable {
                 }
             }
         } catch (IOException e) {
-            System.out.println("Error reading from or writing to client: " + e.getMessage());
-        } finally {        
+            System.out.println("Client disconnected: " + e.getMessage());
+        } finally {
             close();
-            System.out.println("cerro coneccion");
+            reset();  // Preparar para reutilización
+            System.out.println("Connection closed and handler reset");
         }
     }
+    
 
     private void processCommand(String line) {
         try {
@@ -194,5 +195,25 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    public void reset() {
+        try {
+            if (output != null) {
+                output.close();
+            }
+            if (input != null) {
+                input.close();
+            }
+            if (clientSocket != null && !clientSocket.isClosed()) {
+                clientSocket.close();
+            }
+        } catch (IOException e) {
+            System.err.println("Error resetting client handler: " + e.getMessage());
+        } finally {
+            clientSocket = null;
+            input = null;
+            output = null;
+        }
+    }
+    
 
 }

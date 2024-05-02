@@ -24,23 +24,32 @@ public class servidor {
             System.out.println("Server started on port: " + port);
 
             while (isRunning) {
-                System.out.println("Waiting for clients...");
                 Socket clientSocket = serverSocket.accept();
-
                 ClientHandler clientHandler = connectionPool.acquireConnection();
                 if (clientHandler == null) {
-                    // Envía un mensaje al cliente si no hay conexiones disponibles
                     DataOutputStream tempOutput = new DataOutputStream(clientSocket.getOutputStream());
                     tempOutput.writeUTF("Connection refused: maximum connections reached.");
                     tempOutput.close();
                     clientSocket.close();
-                    System.out.println("Refused client: " + clientSocket.getInetAddress());
                 } else {
-                    System.out.println("Client connected from " + clientSocket.getInetAddress());
                     clientHandler.setSocket(clientSocket);
-                    connectionPool.getExecutorService().execute(clientHandler);
+
+                        // Obtener el servicio de ejecución del pool de conexiones
+                        ExecutorService executor = connectionPool.getExecutorService();
+
+                        // Definir la tarea a ejecutar en el servicio de ejecución
+                        Runnable task = () -> {
+                            // Ejecutar la lógica del controlador de cliente
+                            clientHandler.run();
+                            
+                            // Devolver la conexión al pool después de desconectar
+                            connectionPool.releaseConnection(clientHandler);
+                        };
+
+                        // Ejecutar la tarea en el servicio de ejecución
+                        executor.execute(task);
                 }
-            }
+            }            
         } catch (IOException e) {
             System.out.println("Error starting the server: " + e.getMessage());
         } finally {
