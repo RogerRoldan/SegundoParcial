@@ -37,8 +37,8 @@ public class ConnectionPool {
     }
 
     // Method to get a ClientHandler from the pool
-    public ClientHandler acquireConnection() throws InterruptedException {
-        return pool.take();
+    public ClientHandler acquireConnection() {
+        return pool.poll();
     }
 
     // Method to release a ClientHandler back to the pool

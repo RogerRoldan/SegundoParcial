@@ -55,11 +55,10 @@ public class cliente {
         out.writeUTF(message); // UTF is a string encoding
         out.flush();
     }
-    public String receiveMessage(Socket socket) throws IOException {
-        DataInputStream in = new DataInputStream(socket.getInputStream());
-        return in.readUTF();
+    public String receiveMessage() throws IOException {
+        return input.readUTF();
     }
-
+    
     public void receiveFile(String filename) throws IOException {
         // Enviar comando para recibir un archivo
         Map<String, String> command = new HashMap<>();

@@ -53,8 +53,12 @@ public class ClientGUI extends JFrame {
         connectButton.addActionListener(e -> {
             try {
                 fileClient = new cliente(hostField.getText(), Integer.parseInt(portField.getText()));
-                logArea.append("Connected to server\n");
+                String serverResponse = fileClient.receiveMessage();  // Asume que tienes un método para recibir mensajes del servidor
+                connectButton.setEnabled(false);
+                logArea.append(serverResponse + "\n");
+                
             } catch (IOException ioException) {
+                connectButton.setEnabled(true);
                 logArea.append("Failed to connect: " + ioException.getMessage() + "\n");
             }
         });

@@ -24,20 +24,21 @@ public class servidor {
             System.out.println("Server started on port: " + port);
 
             while (isRunning) {
-                try {
-                    System.out.println("Waiting for clients...");
-                    Socket clientSocket = serverSocket.accept();
+                System.out.println("Waiting for clients...");
+                Socket clientSocket = serverSocket.accept();
+
+                ClientHandler clientHandler = connectionPool.acquireConnection();
+                if (clientHandler == null) {
+                    // Envía un mensaje al cliente si no hay conexiones disponibles
+                    DataOutputStream tempOutput = new DataOutputStream(clientSocket.getOutputStream());
+                    tempOutput.writeUTF("Connection refused: maximum connections reached.");
+                    tempOutput.close();
+                    clientSocket.close();
+                    System.out.println("Refused client: " + clientSocket.getInetAddress());
+                } else {
                     System.out.println("Client connected from " + clientSocket.getInetAddress());
-
-                    // Utiliza el pool para manejar la conexión
-                    ClientHandler clientHandler = connectionPool.acquireConnection();
                     clientHandler.setSocket(clientSocket);
-
-                    // Ejecuta el handler en un nuevo hilo
                     connectionPool.getExecutorService().execute(clientHandler);
-
-                } catch (InterruptedException e) {
-                    System.out.println("Error acquiring a connection from the pool: " + e.getMessage());
                 }
             }
         } catch (IOException e) {

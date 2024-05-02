@@ -23,7 +23,13 @@ public class ClientHandler implements Runnable {
     public void setSocket(Socket socket) {
         this.clientSocket = socket;
         initializeDataStreams();
+        try {
+            output.writeUTF("Welcome, connection accepted.");
+        } catch (IOException e) {
+            System.err.println("Error sending welcome message: " + e.getMessage());
+        }
     }
+    
     private void initializeDataStreams() {
         try {
             // Cierra flujos antiguos si existen
