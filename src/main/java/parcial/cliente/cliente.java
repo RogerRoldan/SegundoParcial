@@ -50,6 +50,15 @@ public class cliente {
         output.flush();
         fileInputStream.close();
     }
+    public void sendMessage(Socket socket, String message) throws IOException {
+        DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+        out.writeUTF(message); // UTF is a string encoding
+        out.flush();
+    }
+    public String receiveMessage(Socket socket) throws IOException {
+        DataInputStream in = new DataInputStream(socket.getInputStream());
+        return in.readUTF();
+    }
 
     public void receiveFile(String filename) throws IOException {
         // Enviar comando para recibir un archivo
@@ -74,6 +83,7 @@ public class cliente {
     private void sendCommand(Map<String, String> command) throws IOException {
         String jsonString = objectMapper.writeValueAsString(command);
         output.writeUTF(jsonString);
+        
         output.flush();
     }
 

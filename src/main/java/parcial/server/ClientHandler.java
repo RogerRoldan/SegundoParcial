@@ -5,6 +5,7 @@
  */
 package parcial.server;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -16,14 +17,28 @@ public class ClientHandler implements Runnable {
     private DataOutputStream output;
     private static ObjectMapper objectMapper = new ObjectMapper();
 
-    public ClientHandler(Socket socket) {
+    public ClientHandler() {
+    }
+
+    public void setSocket(Socket socket) {
         this.clientSocket = socket;
+        initializeDataStreams();
+    }
+    private void initializeDataStreams() {
         try {
+            // Cierra flujos antiguos si existen
+            if (input != null) {
+                input.close();
+            }
+            if (output != null) {
+                output.close();
+            }
+            
+            // Establece los nuevos flujos de entrada y salida para el socket
             input = new DataInputStream(clientSocket.getInputStream());
             output = new DataOutputStream(clientSocket.getOutputStream());
         } catch (IOException e) {
-            System.out.println("Error setting up stream: " + e.getMessage());
-            close();
+            System.err.println("Error initializing data streams: " + e.getMessage());
         }
     }
 
@@ -61,7 +76,7 @@ public class ClientHandler implements Runnable {
                     sendFile((String) command.get("filename"));
                     break;
                 case "receive_file":
-                    receiveFile((String) command.get("filename"));
+                    receiveFile((String) command.get("filename"), (String) command.get("filesize"));
                     break;
                 default:
                     output.writeUTF("Unknown command");
@@ -70,7 +85,27 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) {
             System.out.println("Error processing command: " + e.getMessage());
         }
-         System.out.println("3");
+        
+    }
+    public void processMessage(String jsonMessage) {
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            JsonNode node = mapper.readTree(jsonMessage);
+            if ("confirmation".equals(node.get("type").asText())) {
+                System.out.println(node.get("message").asText());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    public void sendMessage(Socket socket, String message) throws IOException {
+        DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+        out.writeUTF(message); // UTF is a string encoding
+        out.flush();
+    }
+    public String receiveMessage(Socket socket) throws IOException {
+        DataInputStream in = new DataInputStream(socket.getInputStream());
+        return in.readUTF();
     }
 
     private void listFiles() throws IOException {
@@ -78,7 +113,7 @@ public class ClientHandler implements Runnable {
         File folder = new File("server_files/");
         File[] listOfFiles = folder.listFiles();
         List<Map<String, Object>> files = new ArrayList<>();
-
+        System.out.println("1");
         for (File file : listOfFiles) {
             if (file.isFile()) {
                 Map<String, Object> fileInfo = new HashMap<>();
@@ -86,6 +121,7 @@ public class ClientHandler implements Runnable {
                 fileInfo.put("size", file.length());
                 fileInfo.put("extension", getFileExtension(file));
                 files.add(fileInfo);
+                System.out.println("1.");
             }
         }
 
@@ -110,18 +146,26 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private void receiveFile(String filename) throws IOException {
+    private void receiveFile(String filename, String Size) throws IOException {
         File file = new File("server_files/" + filename);
-        FileOutputStream fos = new FileOutputStream(file);
-        byte[] buffer = new byte[4096];
-        int read;
-        while ((read = input.read(buffer)) != -1) {
-            System.out.println("1");
-            fos.write(buffer, 0, read);
-            System.out.println("2");
+        try (FileOutputStream fos = new FileOutputStream(file);
+             BufferedOutputStream bos = new BufferedOutputStream(fos)) {
+            int expectedSize = Integer.parseInt(Size);
+            byte[] buffer = new byte[4096];
+            int read = 0;
+            int totalRead = 0;
+
+            while (totalRead < expectedSize && (read = input.read(buffer, 0, Math.min(buffer.length, expectedSize - totalRead))) != -1) {
+                bos.write(buffer, 0, read);
+                totalRead += read;
+                System.out.println("Received " + totalRead + " of " + expectedSize + " bytes.");
+            }
+
+            System.out.println("File reception completed.");
+        } catch (IOException e) {
+            System.out.println("Error receiving file: " + e.getMessage());
+            throw e;
         }
-        System.out.println("3");
-        fos.close();
     }
 
     private String getFileExtension(File file) {
@@ -142,4 +186,6 @@ public class ClientHandler implements Runnable {
             System.out.println("Error closing streams or socket: " + e.getMessage());
         }
     }
+
+
 }

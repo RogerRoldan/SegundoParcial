@@ -1,0 +1,7 @@
+parcial\cliente\ClientGUI.class
+parcial\server\DocumentManager.class
+parcial\server\ConnectionPool.class
+parcial\server\Document.class
+parcial\server\ClientHandler.class
+parcial\server\servidor.class
+parcial\cliente\cliente.class

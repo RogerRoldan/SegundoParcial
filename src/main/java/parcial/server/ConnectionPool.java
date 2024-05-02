@@ -6,49 +6,62 @@
 package parcial.server;
 
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class ConnectionPool {
-    private static ConnectionPool instance;
-    private BlockingQueue<ClientHandler> availableConnections;
-    private ExecutorService executorService;
+    private static ConnectionPool instance = null;
+    private final int maxConnections;
+    private final ExecutorService executorService;
+    private final LinkedBlockingQueue<ClientHandler> pool;
 
-    // Configuración del pool
-    private static final int MAX_CONNECTIONS = 10; // Puedes ajustar este número según las necesidades de tu aplicación
+    // Private constructor for Singleton pattern
+    private ConnectionPool(int maxConnections) {
+        this.maxConnections = maxConnections;
+        this.executorService = Executors.newFixedThreadPool(maxConnections);
+        this.pool = new LinkedBlockingQueue<>(maxConnections);
 
-    private ConnectionPool() {
-        // Crear una cola para manejar las conexiones disponibles
-        availableConnections = new LinkedBlockingQueue<>(MAX_CONNECTIONS);
-        executorService = Executors.newFixedThreadPool(MAX_CONNECTIONS);
-
-        // Pre-crear objetos ClientHandler y ponerlos en la cola
-        for (int i = 0; i < MAX_CONNECTIONS; i++) {
-            availableConnections.offer(new ClientHandler(null)); // Aquí null es temporal, debería asignarse un socket en el momento de uso
+        // Initialize the pool with ClientHandler instances
+        for (int i = 0; i < maxConnections; i++) {
+            pool.offer(new ClientHandler());
         }
     }
 
-    public static synchronized ConnectionPool getInstance() {
+    // Singleton access method
+    public static ConnectionPool getInstance(int maxConnections) {
         if (instance == null) {
-            instance = new ConnectionPool();
+            instance = new ConnectionPool(maxConnections);
         }
         return instance;
     }
 
+    // Method to get a ClientHandler from the pool
     public ClientHandler acquireConnection() throws InterruptedException {
-        // Tomar una conexión del pool, bloqueará si no hay conexiones disponibles
-        return availableConnections.take();
+        return pool.take();
     }
 
+    // Method to release a ClientHandler back to the pool
     public void releaseConnection(ClientHandler clientHandler) {
-        // Devuelve la conexión al pool y está lista para ser usada de nuevo
         if (clientHandler != null) {
-            availableConnections.offer(clientHandler);
+            pool.offer(clientHandler);
         }
     }
 
+    // Get ExecutorService
+    public ExecutorService getExecutorService() {
+        return executorService;
+    }
+
+    // Shutdown the pool and ExecutorService
     public void shutdownPool() {
-        executorService.shutdown();
+        try {
+            executorService.shutdown();
+            executorService.awaitTermination(60, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            System.err.println("Executor service shutdown interrupted.");
+        } finally {
+            executorService.shutdownNow();
+        }
     }
 }
