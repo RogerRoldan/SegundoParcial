@@ -27,6 +27,13 @@ public class cliente {
         sendCommand(command);
     }
 
+    public void listClients() throws IOException {
+        Map<String, String> command = new HashMap<>();
+        command.put("type", "list_clients");
+        sendCommand(command);
+    }
+    
+
     public void sendFile(String filePath) throws IOException {
         // Enviar comando para enviar un archivo
         File file = new File(filePath);

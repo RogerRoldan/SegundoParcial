@@ -16,12 +16,21 @@ public class ClientHandler implements Runnable {
     private DataInputStream input;
     private DataOutputStream output;
     private static ObjectMapper objectMapper = new ObjectMapper();
+    private Date connectionTime;  // para almacenar la fecha y hora de conexión
 
     public ClientHandler() {
     }
 
+    // Método para obtener detalles del cliente para el listado
+    public String getClientDetails() {
+        return clientSocket.getInetAddress().getHostAddress() + " - " +
+               connectionTime + " - " +
+               String.format("%tT", connectionTime); // Formato de hora HH:MM:SS
+    }
+
     public void setSocket(Socket socket) {
         this.clientSocket = socket;
+        this.connectionTime = new Date();  // Establece la hora de conexión aquí
         initializeDataStreams();
         try {
             output.writeUTF("Welcome, connection accepted.");
@@ -76,6 +85,9 @@ public class ClientHandler implements Runnable {
             String type = (String) command.get("type");
             
             switch (type) {
+                case "list_clients":
+                listClients();
+                break;
                 case "list_files":
                     listFiles();
                     break;
@@ -94,6 +106,12 @@ public class ClientHandler implements Runnable {
         }
         
     }
+
+    private void listClients() throws IOException {
+        List<String> clientDetails = ConnectionPool.getInstance(1).getActiveClientDetails();
+        output.writeUTF(String.join("\n", clientDetails));
+    }
+
     public void processMessage(String jsonMessage) {
         ObjectMapper mapper = new ObjectMapper();
         try {

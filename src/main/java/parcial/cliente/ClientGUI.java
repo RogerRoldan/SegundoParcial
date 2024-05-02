@@ -18,6 +18,7 @@ public class ClientGUI extends JFrame {
     private final JTextArea logArea = new JTextArea(10, 50);
     private final JButton connectButton = new JButton("Connect");
     private final JButton listFilesButton = new JButton("List Files");
+    private final JButton listClientsButton = new JButton("List Clients");
     private final JButton sendFileButton = new JButton("Send File");
     private final JButton receiveFileButton = new JButton("Receive File");
     private JFileChooser fileChooser = new JFileChooser();
@@ -43,6 +44,7 @@ public class ClientGUI extends JFrame {
         JPanel southPanel = new JPanel();
         southPanel.add(listFilesButton);
         southPanel.add(sendFileButton);
+        southPanel.add(listClientsButton);
         southPanel.add(receiveFileButton);
 
         add(northPanel, BorderLayout.NORTH);
@@ -91,6 +93,22 @@ public class ClientGUI extends JFrame {
                 logArea.append("Error listing files: " + ioException.getMessage() + "\n");
             }
         });
+
+        listClientsButton.addActionListener(e -> {
+            try {
+                fileClient.listClients();  // Envía el comando para listar los clientes
+                String serverResponse = fileClient.receiveMessage();  // Recibe la respuesta del servidor
+        
+                // Limpiar el área de texto antes de agregar nuevo contenido
+                logArea.setText("");
+        
+                // Agregar la respuesta del servidor al área de texto
+                logArea.append("Clientes Conectados:\n" + serverResponse);
+            } catch (IOException ioException) {
+                logArea.append("Error listing clients: " + ioException.getMessage() + "\n");
+            }
+        });
+        
 
 
        sendFileButton.addActionListener(e -> {
