@@ -62,9 +62,9 @@ public class ClientHandler implements Runnable {
             }
         } catch (IOException e) {
             System.out.println("Error reading from or writing to client: " + e.getMessage());
-        } finally {
-            System.out.println("si");
+        } finally {        
             close();
+            System.out.println("cerro coneccion");
         }
     }
 
@@ -126,8 +126,7 @@ public class ClientHandler implements Runnable {
                 fileInfo.put("name", file.getName());
                 fileInfo.put("size", file.length());
                 fileInfo.put("extension", getFileExtension(file));
-                files.add(fileInfo);
-                System.out.println("1.");
+                files.add(fileInfo);         
             }
         }
 
@@ -168,6 +167,7 @@ public class ClientHandler implements Runnable {
             }
 
             System.out.println("File reception completed.");
+            output.writeUTF("Archivo Enviado : ");
         } catch (IOException e) {
             System.out.println("Error receiving file: " + e.getMessage());
             throw e;
@@ -185,9 +185,10 @@ public class ClientHandler implements Runnable {
 
     private void close() {
         try {
-            if (output != null) output.close();
-            if (input != null) input.close();
-            if (clientSocket != null) clientSocket.close();
+            output.close();
+            input.close();
+            clientSocket.close();
+            
         } catch (IOException e) {
             System.out.println("Error closing streams or socket: " + e.getMessage());
         }
