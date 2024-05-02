@@ -66,6 +66,8 @@ public class ClientGUI extends JFrame {
         listFilesButton.addActionListener(e -> {
             try {
                 fileClient.listFiles();
+                String serverResponse = fileClient.receiveMessage();
+                logArea.append(serverResponse +  " \n");
             } catch (IOException ioException) {
                 logArea.append("Error listing files: " + ioException.getMessage() + "\n");
             }
@@ -78,7 +80,8 @@ public class ClientGUI extends JFrame {
                 try {
                     // Aquí utilizamos getAbsolutePath() en lugar de getName()
                     fileClient.sendFile(file.getAbsolutePath()); // Asegúrate de que el método sendFile maneje la ruta completa
-                    logArea.append("File sent: " + file.getName() + "\n");
+                    String serverResponse = fileClient.receiveMessage();
+                    logArea.append(serverResponse + file.getName() + "   se ha subido correctamente \n");
                 } catch (IOException ioException) {
                     logArea.append("Error sending file: " + ioException.getMessage() + "\n");
                 }
