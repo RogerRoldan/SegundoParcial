@@ -11,6 +11,8 @@ import javax.swing.text.Document;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ClientGUI extends JFrame {
     private final JTextField hostField = new JTextField("localhost", 20);
@@ -21,6 +23,7 @@ public class ClientGUI extends JFrame {
     private final JButton listClientsButton = new JButton("List Clients");
     private final JButton sendFileButton = new JButton("Send File");
     private final JButton receiveFileButton = new JButton("Receive File");
+    private final JTextField NameField = new JTextField("", 20);
     private JFileChooser fileChooser = new JFileChooser();
     private cliente fileClient;
 
@@ -28,7 +31,7 @@ public class ClientGUI extends JFrame {
         super("File Client GUI");
         setLayout(new BorderLayout());
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(600, 400);
+        setSize(800, 400);
 
         JPanel northPanel = new JPanel();
         northPanel.add(new JLabel("Host:"));
@@ -45,7 +48,10 @@ public class ClientGUI extends JFrame {
         southPanel.add(listFilesButton);
         southPanel.add(sendFileButton);
         southPanel.add(listClientsButton);
+        southPanel.add(new JLabel("Namefile:"));
+        southPanel.add(NameField);
         southPanel.add(receiveFileButton);
+        
 
         add(northPanel, BorderLayout.NORTH);
         add(centerPanel, BorderLayout.CENTER);
@@ -61,6 +67,9 @@ public class ClientGUI extends JFrame {
                 String serverResponse = fileClient.receiveMessage();  // Asume que tienes un método para recibir mensajes del servidor
                 connectButton.setEnabled(false);
                 logArea.append(serverResponse + "\n");
+                if(serverResponse.equals("Connection refused: maximum connections reached.")){
+                   connectButton.setEnabled(true); 
+                }
                 
             } catch (IOException ioException) {
                 connectButton.setEnabled(true);
@@ -68,7 +77,7 @@ public class ClientGUI extends JFrame {
             }
         });
 
-        listFilesButton.addActionListener(e -> {
+        listFilesButton.addActionListener((ActionEvent e) -> {
             try {
                 fileClient.listFiles();  // Envia el comando para listar los archivos
                 String serverResponse = fileClient.receiveMessage();  // Recibe el JSON como string
@@ -128,7 +137,15 @@ public class ClientGUI extends JFrame {
        
 
         receiveFileButton.addActionListener(e -> {
-            // Implement receiving a file from the server
+                String filename = NameField.getText();
+            try {
+                fileClient.receiveFile(filename);  
+                String serverResponse = fileClient.receiveMessage(); 
+                logArea.append(serverResponse + "   se ha subido correctamente \n");
+            } catch (IOException ex) {
+                Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
+            }
+                
         });
     }
 
