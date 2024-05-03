@@ -66,25 +66,43 @@ public class cliente {
         return input.readUTF();
     }
     
-    public void receiveFile(String filename) throws IOException {
-        // Enviar comando para recibir un archivo
-        Map<String, String> command = new HashMap<>();
-        command.put("type", "send_file");
-        command.put("filename", filename);
-        sendCommand(command);
+public void receiveFile(String filename) throws IOException {
+    // Enviar comando para recibir un archivo
+    Map<String, String> command = new HashMap<>();
+    command.put("type", "send_file");
+    command.put("filename", filename);
+    sendCommand(command);
 
-        // Recibir archivo del servidor
-        long fileSize = input.readLong();
-        FileOutputStream fos = new FileOutputStream(filename);
+    // Leer la respuesta del servidor antes de intentar recibir el archivo
+    String serverResponse = input.readUTF();
+    if (!"File found".equals(serverResponse)) {
+        System.out.println("File not found on server.");
+        return;
+    }
+
+    // Recibir archivo del servidor
+    long fileSize = input.readLong(); // Asegúrate de que el servidor envíe esto antes del archivo
+    File localFile = new File("local_folder/" + filename);
+    try (FileOutputStream fos = new FileOutputStream(localFile);
+         BufferedOutputStream bos = new BufferedOutputStream(fos)) {
         byte[] buffer = new byte[4096];
         int bytesRead;
         long totalRead = 0;
-        while (totalRead < fileSize && (bytesRead = input.read(buffer)) != -1) {
-            fos.write(buffer, 0, bytesRead);
+
+        while (totalRead < fileSize) {
+            bytesRead = input.read(buffer, 0, buffer.length);
+            if (bytesRead == -1) {
+                break; // Salir si no hay más datos para leer
+            }
+            bos.write(buffer, 0, bytesRead);
             totalRead += bytesRead;
         }
-        fos.close();
-    }
+
+    } // El try-with-resources cierra automáticamente los streams
+
+    System.out.println("File received successfully. Total bytes read: " + fileSize);
+}
+
 
     private void sendCommand(Map<String, String> command) throws IOException {
         String jsonString = objectMapper.writeValueAsString(command);

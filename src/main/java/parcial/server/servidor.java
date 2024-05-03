@@ -81,8 +81,9 @@ public class servidor {
     }
 
     public static void main(String[] args) {
-         String dirPath = "server_files/";
+        String dirPath = "server_files/";
         createDirectoryIfNotExists(dirPath);
+        
         int port = 12345;  // Asumiendo que el servidor corre en el puerto 8000
         servidor server = new servidor(port);
         server.startServer();

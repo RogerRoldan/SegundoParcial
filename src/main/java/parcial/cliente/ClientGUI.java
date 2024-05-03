@@ -137,19 +137,40 @@ public class ClientGUI extends JFrame {
        
 
         receiveFileButton.addActionListener(e -> {
-                String filename = NameField.getText();
-            try {
-                fileClient.receiveFile(filename);  
-                String serverResponse = fileClient.receiveMessage(); 
-                logArea.append(serverResponse + "   se ha subido correctamente \n");
-            } catch (IOException ex) {
-                Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
-            }
-                
+            String filename = NameField.getText();
+            new Thread(() -> {  // Usar un nuevo hilo para no bloquear la UI
+                try {
+                    fileClient.receiveFile(filename);
+                    SwingUtilities.invokeLater(() -> {  // Utilizar SwingUtilities.invokeLater para interactuar con la UI
+                        logArea.append("Archivo recibido correctamente: " + filename + "\n");
+                    });
+                } catch (IOException ex) {
+                    SwingUtilities.invokeLater(() -> {
+                        logArea.append("Error al recibir el archivo: " + ex.getMessage() + "\n");
+                    });
+                }
+            }).start();
         });
+
+
     }
+    
+        public static void createDirectoryIfNotExists(String directoryPath) {
+            File directory = new File(directoryPath);
+            if (!directory.exists()) {
+                if (directory.mkdirs()) {
+                    System.out.println("Directorio creado: " + directoryPath);
+                } else {
+                    System.out.println("No se pudo crear el directorio: " + directoryPath);
+                }
+            }
+        }
 
     public static void main(String[] args) {
+                
+        String dirPathlocal = "local_folder/";
+        createDirectoryIfNotExists(dirPathlocal);
+        
         SwingUtilities.invokeLater(() -> {
             ClientGUI frame = new ClientGUI();
             frame.setVisible(true);

@@ -152,23 +152,28 @@ public class ClientHandler implements Runnable {
         String jsonResponse = objectMapper.writeValueAsString(files);
         output.writeUTF(jsonResponse);
     }
+    
+private void sendFile(String filename) throws IOException {
+    File file = new File("server_files/" + filename);
+    if (file.exists()) {
+        output.writeUTF("File found");
+        output.writeLong(file.length()); // Enviar el tamaño del archivo
 
-    private void sendFile(String filename) throws IOException {
-        File file = new File("server_files/" + filename);
-        if (file.exists()) {
-            output.writeUTF("File found");
-            FileInputStream fis = new FileInputStream(file);
+        try (FileInputStream fis = new FileInputStream(file)) {
             byte[] buffer = new byte[4096];
             int read;
             while ((read = fis.read(buffer)) != -1) {
                 output.write(buffer, 0, read);
             }
             output.flush();
-            fis.close();
-        } else {
-            output.writeUTF("File not found");
         }
+    } else {
+        output.writeUTF("File not found");
     }
+}
+
+
+
 
     private void receiveFile(String filename, String Size) throws IOException {
         File file = new File("server_files/" + filename);
